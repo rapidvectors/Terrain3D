@@ -1,5 +1,5 @@
-#ifndef TERRAIN_3D_MESHER_CLASS_H
-#define TERRAIN_3D_MESHER_CLASS_H
+#ifndef TERRAIN_3D_ASSET_LAYER_CLASS_H
+#define TERRAIN_3D_ASSET_LAYER_CLASS_H
 
 #include <godot_cpp/classes/node3d.hpp>
 
@@ -24,19 +24,20 @@ private:
 
 	void _init();
 
-	void _initialize();
-
 public:
 	Terrain3DAssetLayer();
 	~Terrain3DAssetLayer();
 
+	void _initialize(Terrain3D *p_terrain);
+
 	void set_terrain(Terrain3D *p_terrain);
-	Terrain3D* get_terrain() const { return _terrain; }
+	Terrain3D *get_terrain() const { return _terrain; }
 	void set_assets(const Ref<Terrain3DAssets> &p_assets);
 	Ref<Terrain3DAssets> get_assets() const { return _assets; }
+	Terrain3DInstancer *get_instancer() const { return _instancer; }
 
 protected:
 	static void _bind_methods();
 };
 
-#endif // TERRAIN_3D_MESHER_CLASS_H
+#endif // TERRAIN_3D_ASSET_LAYER_CLASS_H

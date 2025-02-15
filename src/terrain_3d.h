@@ -11,6 +11,7 @@
 #include <godot_cpp/classes/rendering_server.hpp>
 #include <godot_cpp/classes/static_body3d.hpp>
 #include <godot_cpp/classes/sub_viewport.hpp>
+#include <godot_cpp/classes/node3d.hpp>
 
 #include "constants.h"
 #include "terrain_3d_assets.h"
@@ -20,6 +21,7 @@
 #include "terrain_3d_instancer.h"
 #include "terrain_3d_material.h"
 #include "terrain_3d_asset_layer.h"
+#include "terrain_3d_mesh_asset.h"
 
 using namespace godot;
 
@@ -118,6 +120,8 @@ private:
 			const Terrain3DData::HeightFilter p_filter, const bool require_nav, const AABB &p_global_aabb) const;
 	void _generate_triangle_pair(PackedVector3Array &p_vertices, PackedVector2Array *p_uvs, const int32_t p_lod,
 			const Terrain3DData::HeightFilter p_filter, const bool require_nav, const int32_t x, const int32_t z) const;
+
+	void _on_selection_changed();
 
 public:
 	static int debug_level;

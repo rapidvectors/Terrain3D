@@ -2,6 +2,7 @@
 
 #include <godot_cpp/classes/compositor.hpp>
 #include <godot_cpp/classes/editor_interface.hpp>
+#include <godot_cpp/classes/editor_selection.hpp>
 #include <godot_cpp/classes/engine.hpp>
 #include <godot_cpp/classes/environment.hpp>
 #include <godot_cpp/classes/height_map_shape3d.hpp>
@@ -620,8 +621,31 @@ void Terrain3D::set_editor(Terrain3DEditor *p_editor) {
 }
 
 void Terrain3D::set_plugin(EditorPlugin *p_plugin) {
-	_plugin = p_plugin;
-	LOG(DEBUG, "Received editor plugin: ", p_plugin);
+	if (_plugin != p_plugin) {
+		_plugin = p_plugin;
+		LOG(DEBUG, "Received editor plugin: ", p_plugin);
+
+		EditorInterface *editor_interface = _plugin->get_editor_interface();
+		editor_interface->get_selection()->connect("selection_changed", callable_mp(this, &Terrain3D::_on_selection_changed));
+	}
+}
+
+void Terrain3D::_on_selection_changed() {
+	EditorSelection *selection = _plugin->get_editor_interface()->get_selection();
+	Array selected_nodes = selection->get_selected_nodes();
+
+	if (!selected_nodes.is_empty()) {
+		Node *selected_node = Object::cast_to<Node>(selected_nodes[0]); // Get first selected node
+		if (Object::cast_to<Terrain3DAssetLayer>(selected_node)) {
+			UtilityFunctions::print("Selected Node:", selected_node->get_name());
+			Terrain3DAssetLayer *_asset_layer = Object::cast_to<Terrain3DAssetLayer>(selected_node);
+			_asset_layer->_initialize(this);
+			_instancer = _asset_layer->get_instancer();
+			emit_signal("asset_layer_selected", Variant(_asset_layer));
+		}
+	} else {
+		UtilityFunctions::print("No node selected");
+	}
 }
 
 void Terrain3D::set_camera(Camera3D *p_camera) {
@@ -1416,4 +1440,6 @@ void Terrain3D::_bind_methods() {
 
 	ADD_SIGNAL(MethodInfo("material_changed"));
 	ADD_SIGNAL(MethodInfo("assets_changed"));
+	//ADD_SIGNAL(MethodInfo("asset_layer_selected"));
+	ADD_SIGNAL(MethodInfo("asset_layer_selected", PropertyInfo(Variant::OBJECT, "asset_layer", PROPERTY_HINT_RESOURCE_TYPE, "Terrain3DAssetLayer")));
 }

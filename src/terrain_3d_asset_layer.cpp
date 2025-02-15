@@ -9,11 +9,16 @@ Terrain3DAssetLayer::~Terrain3DAssetLayer() {
 void Terrain3DAssetLayer::_init() {
 }
 
-void Terrain3DAssetLayer::_initialize() {
-	if (_terrain == nullptr) {
+void Terrain3DAssetLayer::_initialize(Terrain3D *p_terrain) {
+	if (_terrain != p_terrain) {
+		LOG(INFO, "Terrain asset layer already initialized");
+		_terrain = p_terrain;
+	}
+
+	/*if (_terrain == nullptr) {
 		LOG(DEBUG, "Set the terrain first");
 		return;
-	}
+	}*/
 
 	if (_assets.is_null()) {
 		LOG(DEBUG, "Terrain assets not created.");
@@ -31,12 +36,18 @@ void Terrain3DAssetLayer::_initialize() {
 		_assets->connect("meshes_changed", callable_mp(_instancer, &Terrain3DInstancer::_update_mmis).bind(V2I_MAX, -1));
 	}
 
-	// Initialize the system
-	if (!_initialized && _is_inside_world && is_inside_tree()) {
+	if (!_initialized && is_inside_tree()) {
 		//_mesh_asset->initialize(this);
 		_instancer->initialize(_terrain);
 		_initialized = true;
 	}
+
+	// Initialize the system
+	//if (!_initialized && _is_inside_world && is_inside_tree()) {
+	//	//_mesh_asset->initialize(this);
+	//	_instancer->initialize(_terrain);
+	//	_initialized = true;
+	//}
 	update_configuration_warnings();
 }
 
@@ -45,7 +56,7 @@ void Terrain3DAssetLayer::set_terrain(Terrain3D *p_terrain) {
 		//_clear_meshes();
 		LOG(INFO, "Setting asset list");
 		_terrain = p_terrain;
-		_initialize();
+		_initialize(_terrain);
 		//emit_signal("assets_changed");
 	}
 }
@@ -55,7 +66,7 @@ void Terrain3DAssetLayer::set_assets(const Ref<Terrain3DAssets> &p_assets) {
 		//_clear_meshes();
 		LOG(INFO, "Setting asset list");
 		_assets = p_assets;
-		_initialize();
+		_initialize(_terrain);
 		//emit_signal("assets_changed");
 	}
 }
@@ -66,8 +77,9 @@ void Terrain3DAssetLayer::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_terrain"), &Terrain3DAssetLayer::get_terrain);
 	ClassDB::bind_method(D_METHOD("set_assets", "assets"), &Terrain3DAssetLayer::set_assets);
 	ClassDB::bind_method(D_METHOD("get_assets"), &Terrain3DAssetLayer::get_assets);
+	ClassDB::bind_method(D_METHOD("get_instancer"), &Terrain3DAssetLayer::get_instancer);
 
 	// create the UI properties
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "terrain", PROPERTY_HINT_NODE_TYPE, "Terrain3D"), "set_terrain", "get_terrain");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "assets", PROPERTY_HINT_RESOURCE_TYPE, "Terrain3DAssets"), "set_assets", "get_assets");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "instancer", PROPERTY_HINT_NONE, "Terrain3DInstancer", PROPERTY_USAGE_NONE), "", "get_instancer");
 }
