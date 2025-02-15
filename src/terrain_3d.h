@@ -19,6 +19,7 @@
 #include "terrain_3d_editor.h"
 #include "terrain_3d_instancer.h"
 #include "terrain_3d_material.h"
+#include "terrain_3d_asset_layer.h"
 
 using namespace godot;
 
