@@ -82,7 +82,7 @@ void Terrain3DInstancer::_update_mmis(const Vector2i &p_region_loc, const int p_
 					Node3D *node = memnew(Node3D);
 					node->set_name(rname);
 					_mmi_containers[region_loc] = node;
-					_terrain->get_mmi_parent()->add_child(node, true);
+					_asset_layer->get_al_mmi_parent_node()->add_child(node, true);
 				}
 
 				// Retrieve MMI or create one
@@ -106,7 +106,7 @@ void Terrain3DInstancer::_update_mmis(const Vector2i &p_region_loc, const int p_
 					//mmi->set_visibility_range_end_margin(ma->get_visibility_margin());
 					cell_mmi_dict[cell] = mmi;
 					//Attach to tree
-					Node *node_container = _terrain->get_mmi_parent()->get_node_internal(rname);
+					Node *node_container = _asset_layer->get_al_mmi_parent_node()->get_node_internal(rname);
 					if (node_container == nullptr) {
 						LOG(ERROR, rname, " isn't attached to the tree.");
 						continue;
@@ -1023,7 +1023,7 @@ void Terrain3DInstancer::dump_mmis() {
 		LOG(MESG, "_mmi_containers region: ", it.first, ", node ptr: ", uint64_t(it.second));
 	}
 	LOG(MESG, "_mmi tree: ");
-	_terrain->get_mmi_parent()->print_tree();
+	_asset_layer->get_al_mmi_parent_node()->print_tree();
 	LOG(MESG, "_mmi_nodes size: ", int(_mmi_nodes.size()));
 	for (auto &i : _mmi_nodes) {
 		LOG(MESG, "_mmi_nodes region: ", i.first, ", dict ptr: ", uint64_t(&i.second));
@@ -1033,6 +1033,14 @@ void Terrain3DInstancer::dump_mmis() {
 				LOG(MESG, "cell_mmi_dict cell: ", k.first, ", mmi ptr: ", uint64_t(k.second));
 			}
 		}
+	}
+}
+
+void Terrain3DInstancer::set_asset_layer(Terrain3DAssetLayer *p_asset_layer) {
+	if (_asset_layer != p_asset_layer) {
+		//_clear_meshes();
+		LOG(INFO, "Setting asset layer");
+		_asset_layer = p_asset_layer;
 	}
 }
 

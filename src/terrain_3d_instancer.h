@@ -13,6 +13,7 @@ using namespace godot;
 
 class Terrain3D;
 class Terrain3DAssets;
+class Terrain3DAssetLayer;
 
 class Terrain3DInstancer : public Object {
 	GDCLASS(Terrain3DInstancer, Object);
@@ -24,6 +25,7 @@ public: // Constants
 
 private:
 	Terrain3D *_terrain = nullptr;
+	Terrain3DAssetLayer *_asset_layer = nullptr;
 
 	// MM Resources stored in Terrain3DRegion::_instances as
 	// Region::_instances{mesh_id:int} -> cell{v2i} -> [ TypedArray<Transform3D>, PackedColorArray, modified:bool ]
@@ -40,7 +42,7 @@ private:
 
 	uint32_t _density_counter = 0;
 	uint32_t _get_density_count(const real_t p_density);
-		
+
 	void _update_vertex_spacing(const real_t p_vertex_spacing);
 	void _destroy_mmi_by_cell(const Vector2i &p_region_loc, const int p_mesh_id, const Vector2i p_cell);
 	void _destroy_mmi_by_location(const Vector2i &p_region_loc, const int p_mesh_id);
@@ -78,6 +80,9 @@ public:
 	void reset_density_counter() { _density_counter = 0; }
 	void dump_data();
 	void dump_mmis();
+
+	void set_asset_layer(Terrain3DAssetLayer *p_asset_layer);
+	Terrain3DAssetLayer *get_asset_layer() const { return _asset_layer; }
 
 protected:
 	static void _bind_methods();

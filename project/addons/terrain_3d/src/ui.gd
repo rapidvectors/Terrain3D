@@ -110,6 +110,7 @@ func set_visible(p_visible: bool, p_menu_only: bool = false) -> void:
 		toolbar.set_visible(false)
 		tool_settings.set_visible(false)
 	else:
+		#print("UI and tools visible")
 		visible = p_visible
 		toolbar.set_visible(p_visible)
 		tool_settings.set_visible(p_visible)
@@ -300,12 +301,15 @@ func _invert_operation(p_operation: Terrain3DEditor.Operation, flags: int = OP_N
 
 
 func update_decal() -> void:
+	#print("update decal")
 	if not plugin.terrain:
+		#print("decal returning")
 		return
 	mat_rid = plugin.terrain.material.get_material_rid()
 	editor_decal_timer.start()
 	
 	# If not a state that should show the decal, hide everything and return
+	#print("visible,", visible)
 	if not visible or \
 		plugin._input_mode < 0 or \
 		# Wait for cursor to recenter after moving camera before revealing
@@ -395,6 +399,7 @@ func update_decal() -> void:
 				editor_decal_color[0] = COLOR_NAVIGATION
 				editor_decal_color[0].a = .80
 			Terrain3DEditor.INSTANCER:
+				#print("Instancer editor decal")
 				editor_brush_texture_rid = ring_texture.get_rid()
 				editor_decal_color[0] = COLOR_INSTANCER
 				editor_decal_color[0].a = .75
@@ -500,3 +505,11 @@ func pick(p_global_position: Vector3) -> void:
 
 func set_button_editor_icon(p_button: Button, p_icon_name: String) -> void:
 	p_button.icon = EditorInterface.get_base_control().get_theme_icon(p_icon_name, "EditorIcons")
+
+
+func set_asset_layer_ui_visibility() -> void:
+	_on_tool_changed(Terrain3DEditor.INSTANCER, Terrain3DEditor.ADD)
+	toolbar.set_visible(false)
+	tool_settings.set_visible(true)
+	visible = true
+	update_decal()

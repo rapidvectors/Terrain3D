@@ -20,10 +20,12 @@
 #include "terrain_3d_editor.h"
 #include "terrain_3d_instancer.h"
 #include "terrain_3d_material.h"
-#include "terrain_3d_asset_layer.h"
 #include "terrain_3d_mesh_asset.h"
+#include "terrain_3d_asset_layer.h"
 
 using namespace godot;
+
+class Terrain3DAssetLayer;
 
 class Terrain3D : public Node3D {
 	GDCLASS(Terrain3D, Node3D);
@@ -50,7 +52,7 @@ private:
 	Terrain3DData *_data = nullptr;
 	Ref<Terrain3DMaterial> _material;
 	Ref<Terrain3DAssets> _assets;
-	Terrain3DInstancer *_instancer = nullptr;
+	Terrain3DAssetLayer *_selected_asset_layer = nullptr;
 	Terrain3DCollision *_collision = nullptr;
 	Terrain3DEditor *_editor = nullptr;
 	EditorPlugin *_plugin = nullptr;
@@ -96,7 +98,7 @@ private:
 
 	// Parent containers for child nodes
 	Node3D *_label_parent;
-	Node3D *_mmi_parent;
+	//Node3D *_mmi_parent;
 
 	void _initialize();
 	void __physics_process(const double p_delta);
@@ -106,7 +108,7 @@ private:
 	void _destroy_containers();
 	void _destroy_labels();
 
-	void _destroy_instancer();
+	//void _destroy_instancer();
 	void _destroy_collision(const bool p_final = false);
 
 	void _build_meshes(const int p_mesh_lods, const int p_mesh_size);
@@ -142,9 +144,9 @@ public:
 	Ref<Terrain3DMaterial> get_material() const { return _material; }
 	void set_assets(const Ref<Terrain3DAssets> &p_assets);
 	Ref<Terrain3DAssets> get_assets() const { return _assets; }
+
 	Terrain3DCollision *get_collision() const { return _collision; }
-	Terrain3DInstancer *get_instancer() const { return _instancer; }
-	Node *get_mmi_parent() const { return _mmi_parent; }
+	//Node *get_mmi_parent() const { return _mmi_parent; }
 	void set_editor(Terrain3DEditor *p_editor);
 	Terrain3DEditor *get_editor() const { return _editor; }
 	void set_plugin(EditorPlugin *p_plugin);
@@ -213,6 +215,9 @@ public:
 	uint32_t get_collision_mask() const { return (_collision != nullptr) ? _collision->get_mask() : 1; }
 	void set_collision_priority(const real_t p_priority) { (_collision != nullptr) ? _collision->set_priority(p_priority) : void(); }
 	real_t get_collision_priority() const { return (_collision != nullptr) ? _collision->get_priority() : 1.f; }
+
+	// Asset Layer
+	Terrain3DAssetLayer* get_selected_asset_layer() const { return _selected_asset_layer; }
 
 	// Debug View Aliases
 	void set_show_checkered(const bool p_enabled) { (_material != nullptr) ? _material->set_show_checkered(p_enabled) : void(); }

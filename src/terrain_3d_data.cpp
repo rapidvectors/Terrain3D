@@ -38,7 +38,7 @@ void Terrain3DData::_copy_paste_dfr(const Terrain3DRegion *p_src_region, const R
 		Ref<Image> img = dst_maps[i];
 		img->blit_rect(src_maps[i], p_src_rect, p_dst_rect.position);
 	}
-	_terrain->get_instancer()->copy_paste_dfr(p_src_region, p_src_rect, p_dst_region);
+	_terrain->get_selected_asset_layer()->get_instancer()->copy_paste_dfr(p_src_region, p_src_rect, p_dst_region);
 }
 
 ///////////////////////////
@@ -157,7 +157,7 @@ void Terrain3DData::change_region_size(int p_new_size) {
 	}
 
 	// Remove old data
-	_terrain->get_instancer()->destroy();
+	_terrain->get_selected_asset_layer()->get_instancer()->destroy();
 	TypedArray<Terrain3DRegion> old_regions = get_regions_active();
 	for (int i = 0; i < old_regions.size(); i++) {
 		remove_region(old_regions[i], false);
@@ -173,7 +173,7 @@ void Terrain3DData::change_region_size(int p_new_size) {
 
 	calc_height_range(true);
 	force_update_maps(TYPE_MAX, true);
-	_terrain->get_instancer()->force_update_mmis();
+	_terrain->get_selected_asset_layer()->get_instancer()->force_update_mmis();
 }
 
 void Terrain3DData::set_region_modified(const Vector2i &p_region_loc, const bool p_modified) {
@@ -259,7 +259,11 @@ Error Terrain3DData::add_region(const Ref<Terrain3DRegion> &p_region, const bool
 	LOG(DEBUG, "Storing region ", region_loc, " version ", vformat("%.3f", p_region->get_version()), " id: ", _region_locations.size());
 	if (p_update) {
 		force_update_maps();
-		_terrain->get_instancer()->force_update_mmis();
+
+		Terrain3DAssetLayer *selected_asset_layer = _terrain->get_selected_asset_layer();
+		if (selected_asset_layer != nullptr) {
+			_terrain->get_selected_asset_layer()->get_instancer()->force_update_mmis();
+		}
 	}
 	return OK;
 }
@@ -296,7 +300,7 @@ void Terrain3DData::remove_region(const Ref<Terrain3DRegion> &p_region, const bo
 	if (p_update) {
 		LOG(DEBUG, "Updating generated maps");
 		force_update_maps();
-		_terrain->get_instancer()->force_update_mmis();
+		_terrain->get_selected_asset_layer()->get_instancer()->force_update_mmis();
 	}
 }
 

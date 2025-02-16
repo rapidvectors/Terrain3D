@@ -23,6 +23,7 @@
 #include "logger.h"
 #include "terrain_3d.h"
 #include "terrain_3d_util.h"
+#include "terrain_3d_asset_layer.h"
 
 ///////////////////////////
 // Private Functions
@@ -51,11 +52,7 @@ void Terrain3D::_initialize() {
 		LOG(DEBUG, "Creating collision manager");
 		_collision = memnew(Terrain3DCollision);
 	}
-	if (_instancer == nullptr) {
-		LOG(DEBUG, "Creating instancer");
-		_instancer = memnew(Terrain3DInstancer);
-	}
-
+	
 	// Connect signals
 	// Any region was changed, update region labels
 	if (!_data->is_connected("region_map_changed", callable_mp(this, &Terrain3D::update_region_labels))) {
@@ -82,19 +79,13 @@ void Terrain3D::_initialize() {
 		LOG(DEBUG, "Connecting _assets.textures_changed to _material->_update_texture_arrays()");
 		_assets->connect("textures_changed", callable_mp(_material.ptr(), &Terrain3DMaterial::_update_texture_arrays));
 	}
-	// MeshAssets changed, update instancer
-	if (!_assets->is_connected("meshes_changed", callable_mp(_instancer, &Terrain3DInstancer::_update_mmis).bind(V2I_MAX, -1))) {
-		LOG(DEBUG, "Connecting _assets.meshes_changed to _instancer->_update_mmis()");
-		_assets->connect("meshes_changed", callable_mp(_instancer, &Terrain3DInstancer::_update_mmis).bind(V2I_MAX, -1));
-	}
-
+	
 	// Initialize the system
 	if (!_initialized && _is_inside_world && is_inside_tree()) {
 		_data->initialize(this);
 		_material->initialize(this);
 		_assets->initialize(this);
 		_collision->initialize(this);
-		_instancer->initialize(this);
 		_build_meshes(_mesh_lods, _mesh_size);
 		_initialized = true;
 	}
@@ -151,14 +142,14 @@ void Terrain3D::_build_containers() {
 	_label_parent = memnew(Node3D);
 	_label_parent->set_name("Labels");
 	add_child(_label_parent, true);
-	_mmi_parent = memnew(Node3D);
+	/*_mmi_parent = memnew(Node3D);
 	_mmi_parent->set_name("MMI");
-	add_child(_mmi_parent, true);
+	add_child(_mmi_parent, true);*/
 }
 
 void Terrain3D::_destroy_containers() {
 	memdelete_safely(_label_parent);
-	memdelete_safely(_mmi_parent);
+	//memdelete_safely(_mmi_parent);
 }
 
 void Terrain3D::_destroy_labels() {
@@ -168,11 +159,6 @@ void Terrain3D::_destroy_labels() {
 		Node *label = cast_to<Node>(labels[i]);
 		memdelete_safely(label);
 	}
-}
-
-void Terrain3D::_destroy_instancer() {
-	LOG(INFO, "Destroying Instancer");
-	memdelete_safely(_instancer);
 }
 
 void Terrain3D::_destroy_collision(const bool p_final) {
@@ -587,7 +573,7 @@ void Terrain3D::set_data_directory(String p_dir) {
 		_clear_meshes();
 		_destroy_labels();
 		_destroy_collision();
-		_destroy_instancer();
+		//_destroy_instancer();
 		memdelete_safely(_data);
 		_data_directory = p_dir;
 		_initialize();
@@ -638,10 +624,11 @@ void Terrain3D::_on_selection_changed() {
 		Node *selected_node = Object::cast_to<Node>(selected_nodes[0]); // Get first selected node
 		if (Object::cast_to<Terrain3DAssetLayer>(selected_node)) {
 			UtilityFunctions::print("Selected Node:", selected_node->get_name());
-			Terrain3DAssetLayer *_asset_layer = Object::cast_to<Terrain3DAssetLayer>(selected_node);
-			_asset_layer->_initialize(this);
-			_instancer = _asset_layer->get_instancer();
-			emit_signal("asset_layer_selected", Variant(_asset_layer));
+			_selected_asset_layer = Object::cast_to<Terrain3DAssetLayer>(selected_node);
+
+			if (_selected_asset_layer != nullptr) {
+				emit_signal("asset_layer_selected", Variant(_selected_asset_layer));
+			}
 		}
 	} else {
 		UtilityFunctions::print("No node selected");
@@ -760,11 +747,11 @@ void Terrain3D::set_vertex_spacing(const real_t p_spacing) {
 		LOG(INFO, "Setting vertex spacing: ", _vertex_spacing);
 		_clear_meshes();
 		_destroy_collision();
-		_destroy_instancer();
+		//_destroy_instancer();
 		_initialize();
 		_data->_vertex_spacing = _vertex_spacing;
 		update_region_labels();
-		_instancer->_update_vertex_spacing(_vertex_spacing);
+		get_selected_asset_layer()->get_instancer()->_update_vertex_spacing(_vertex_spacing);
 	}
 	if (IS_EDITOR && _plugin != nullptr) {
 		_plugin->call("update_region_grid");
@@ -1253,7 +1240,7 @@ void Terrain3D::_notification(const int p_what) {
 			// Object is about to be deleted
 			LOG(INFO, "NOTIFICATION_PREDELETE");
 			_destroy_collision(true);
-			_destroy_instancer();
+			//_destroy_instancer();
 			_destroy_labels();
 			_destroy_containers();
 			memdelete_safely(_data);
@@ -1286,7 +1273,6 @@ void Terrain3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("set_assets", "assets"), &Terrain3D::set_assets);
 	ClassDB::bind_method(D_METHOD("get_assets"), &Terrain3D::get_assets);
 	ClassDB::bind_method(D_METHOD("get_collision"), &Terrain3D::get_collision);
-	ClassDB::bind_method(D_METHOD("get_instancer"), &Terrain3D::get_instancer);
 	ClassDB::bind_method(D_METHOD("set_editor", "editor"), &Terrain3D::set_editor);
 	ClassDB::bind_method(D_METHOD("get_editor"), &Terrain3D::get_editor);
 	ClassDB::bind_method(D_METHOD("set_plugin", "plugin"), &Terrain3D::set_plugin);
@@ -1317,6 +1303,9 @@ void Terrain3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("get_collision_mask"), &Terrain3D::get_collision_mask);
 	ClassDB::bind_method(D_METHOD("set_collision_priority", "priority"), &Terrain3D::set_collision_priority);
 	ClassDB::bind_method(D_METHOD("get_collision_priority"), &Terrain3D::get_collision_priority);
+
+	// Asset Layer
+	ClassDB::bind_method(D_METHOD("get_selected_asset_layer"), &Terrain3D::get_selected_asset_layer);
 
 	// Meshes
 	ClassDB::bind_method(D_METHOD("set_mesh_lods", "count"), &Terrain3D::set_mesh_lods);
@@ -1390,7 +1379,6 @@ void Terrain3D::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "material", PROPERTY_HINT_RESOURCE_TYPE, "Terrain3DMaterial"), "set_material", "get_material");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "assets", PROPERTY_HINT_RESOURCE_TYPE, "Terrain3DAssets"), "set_assets", "get_assets");
 	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "collision", PROPERTY_HINT_NONE, "Terrain3DCollision", PROPERTY_USAGE_NONE), "", "get_collision");
-	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "instancer", PROPERTY_HINT_NONE, "Terrain3DInstancer", PROPERTY_USAGE_NONE), "", "get_instancer");
 
 	ADD_GROUP("Regions", "");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "region_size", PROPERTY_HINT_ENUM, "64:64,128:128,256:256,512:512,1024:1024,2048:2048", PROPERTY_USAGE_EDITOR), "change_region_size", "get_region_size");

@@ -161,10 +161,13 @@ void Terrain3DEditor::_operate_map(const Vector3 &p_global_position, const real_
 	edited_area.size = Vector3(brush_size, 0.f, brush_size);
 
 	if (_tool == INSTANCER) {
-		if (modifier_ctrl) {
-			_terrain->get_instancer()->remove_instances(p_global_position, _brush_data);
-		} else {
-			_terrain->get_instancer()->add_instances(p_global_position, _brush_data);
+		Terrain3DAssetLayer *selected_asset_layer = _terrain->get_selected_asset_layer();
+		if (selected_asset_layer != nullptr) {
+			if (modifier_ctrl) {
+				selected_asset_layer->get_instancer()->remove_instances(p_global_position, _brush_data);
+			} else {
+				selected_asset_layer->get_instancer()->add_instances(p_global_position, _brush_data);
+			}
 		}
 		return;
 	}
@@ -525,7 +528,7 @@ void Terrain3DEditor::_operate_map(const Vector3 &p_global_position, const real_
 	data->add_edited_area(edited_area);
 
 	if (_tool == HOLES || _tool == HEIGHT || _tool == SCULPT) {
-		_terrain->get_instancer()->update_transforms(edited_area);
+		_terrain->get_selected_asset_layer()->get_instancer()->update_transforms(edited_area);
 	}
 	// Update Dynamic / Editor collision
 	if (_terrain->get_collision_mode() == Terrain3DCollision::DYNAMIC_EDITOR) {
@@ -654,7 +657,7 @@ void Terrain3DEditor::_apply_undo(const Dictionary &p_data) {
 			region->set_edited(false);
 		}
 	}
-	_terrain->get_instancer()->force_update_mmis();
+	_terrain->get_selected_asset_layer()->get_instancer()->force_update_mmis();
 	if (_terrain->get_plugin()->has_method("update_grid")) {
 		LOG(DEBUG, "Calling GDScript update_grid()");
 		_terrain->get_plugin()->call("update_grid");
@@ -747,7 +750,10 @@ void Terrain3DEditor::start_operation(const Vector3 &p_global_position) {
 	_edited_regions = TypedArray<Terrain3DRegion>();
 	_added_removed_locations = TypedArray<Vector2i>();
 	// Reset counter at start to ensure first click places an instance
-	_terrain->get_instancer()->reset_density_counter();
+	Terrain3DAssetLayer *selected_asset_layer = _terrain->get_selected_asset_layer();
+	if (selected_asset_layer != nullptr) {
+		selected_asset_layer->get_instancer()->reset_density_counter();
+	}
 	_terrain->get_data()->clear_edited_area();
 	_operation_position = p_global_position;
 	_operation_movement = Vector3();
